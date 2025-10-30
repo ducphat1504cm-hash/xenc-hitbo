@@ -1,5 +1,6 @@
--- 💫 XenC Hitbox GUI | Màu đen, viền trắng, bật xanh, tắt đỏ
--- ⚙️ Made by XenC
+-- 💫 XenC Hitbox GUI | Made by XenC
+-- 🎯 GUI: Nền đen, viền trắng, bật xanh, tắt đỏ
+-- 🧠 Chức năng: Tăng hitbox cho người chơi khác (phóng to vùng đánh)
 
 local ScreenGui = Instance.new("ScreenGui")
 local Frame = Instance.new("Frame")
@@ -26,12 +27,39 @@ ToggleOff.Text = "Tắt"
 ToggleOff.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 ToggleOff.Parent = Frame
 
+-- ⚙️ Cấu hình hitbox
+local hitboxSize = Vector3.new(8, 8, 8) -- kích thước hitbox khi bật
+local normalSize = Vector3.new(2, 2, 1) -- kích thước bình thường
+
+local enabled = false
+local players = game:GetService("Players")
+
+function setHitboxSize(size)
+    for _, v in pairs(players:GetPlayers()) do
+        if v ~= players.LocalPlayer then
+            pcall(function()
+                v.Character.HumanoidRootPart.Size = size
+                v.Character.HumanoidRootPart.Transparency = 0.8
+                v.Character.HumanoidRootPart.Material = Enum.Material.Neon
+                v.Character.HumanoidRootPart.Color = Color3.fromRGB(255, 0, 0)
+                v.Character.HumanoidRootPart.CanCollide = false
+            end)
+        end
+    end
+end
+
 ToggleOn.MouseButton1Click:Connect(function()
-    print("✅ Đã bật Hitbox!")
-    -- Chèn code bật hitbox ở đây
+    if enabled then return end
+    enabled = true
+    print("✅ Hitbox bật!")
+    while enabled do
+        setHitboxSize(hitboxSize)
+        wait(1)
+    end
 end)
 
 ToggleOff.MouseButton1Click:Connect(function()
-    print("❌ Đã tắt Hitbox!")
-    -- Chèn code tắt hitbox ở đây
+    enabled = false
+    print("❌ Hitbox tắt!")
+    setHitboxSize(normalSize)
 end)
