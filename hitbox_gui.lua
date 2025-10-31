@@ -1,65 +1,94 @@
--- 💫 XenC Hitbox GUI | Made by XenC
--- 🎯 GUI: Nền đen, viền trắng, bật xanh, tắt đỏ
--- 🧠 Chức năng: Tăng hitbox cho người chơi khác (phóng to vùng đánh)
+-- 💫 XenC Hitbox GUI | KRNL Compatible
+-- GUI: Nền đen, viền trắng, nút bật xanh, nút tắt đỏ, có ô nhập hitbox
 
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local ToggleOn = Instance.new("TextButton")
-local ToggleOff = Instance.new("TextButton")
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local RunService = game:GetService("RunService")
 
-ScreenGui.Parent = game.CoreGui
+-- GUI
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "XenCHitboxGUI"
 
-Frame.Size = UDim2.new(0, 150, 0, 80)
-Frame.Position = UDim2.new(0.4, 0, 0.4, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-Frame.BorderColor3 = Color3.fromRGB(255, 255, 255)
-Frame.Parent = ScreenGui
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 250, 0, 150)
+Frame.Position = UDim2.new(0.5, -125, 0.5, -75)
+Frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Frame.BorderColor3 = Color3.fromRGB(255,255,255)
+Frame.Active = true
+Frame.Draggable = true
 
-ToggleOn.Size = UDim2.new(0, 60, 0, 30)
-ToggleOn.Position = UDim2.new(0, 10, 0, 25)
-ToggleOn.Text = "Bật"
-ToggleOn.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-ToggleOn.Parent = Frame
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1,0,0,30)
+Title.Position = UDim2.new(0,0,0,0)
+Title.BackgroundTransparency = 1
+Title.Text = "XenC Hitbox GUI"
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 20
 
-ToggleOff.Size = UDim2.new(0, 60, 0, 30)
-ToggleOff.Position = UDim2.new(0, 80, 0, 25)
-ToggleOff.Text = "Tắt"
-ToggleOff.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleOff.Parent = Frame
+-- Hitbox Value Input
+local TextBox = Instance.new("TextBox", Frame)
+TextBox.Size = UDim2.new(0.6,0,0,30)
+TextBox.Position = UDim2.new(0.2,0,0.35,0)
+TextBox.PlaceholderText = "Hitbox size"
+TextBox.Text = ""
+TextBox.ClearTextOnFocus = false
+TextBox.TextColor3 = Color3.fromRGB(255,255,255)
+TextBox.BackgroundColor3 = Color3.fromRGB(50,50,50)
+TextBox.BorderColor3 = Color3.fromRGB(255,255,255)
+TextBox.Font = Enum.Font.SourceSans
+TextBox.TextSize = 18
 
--- ⚙️ Cấu hình hitbox
-local hitboxSize = Vector3.new(8, 8, 8) -- kích thước hitbox khi bật
-local normalSize = Vector3.new(2, 2, 1) -- kích thước bình thường
+-- Buttons
+local function createButton(name, color, posY)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0.4,0,0,30)
+    btn.Position = UDim2.new(0.05 + posY*0.5,0,0.65,0)
+    btn.Text = name
+    btn.BackgroundColor3 = color
+    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    return btn
+end
 
-local enabled = false
-local players = game:GetService("Players")
+local BtnOn = createButton("Bật", Color3.fromRGB(0,255,0), 0)
+local BtnOff = createButton("Tắt", Color3.fromRGB(255,0,0), 1)
 
-function setHitboxSize(size)
-    for _, v in pairs(players:GetPlayers()) do
-        if v ~= players.LocalPlayer then
-            pcall(function()
-                v.Character.HumanoidRootPart.Size = size
-                v.Character.HumanoidRootPart.Transparency = 0.8
-                v.Character.HumanoidRootPart.Material = Enum.Material.Neon
-                v.Character.HumanoidRootPart.Color = Color3.fromRGB(255, 0, 0)
-                v.Character.HumanoidRootPart.CanCollide = false
-            end)
+-- Hitbox logic
+local Enabled = false
+local HitboxSize = 5 -- default
+
+local function updateHitbox()
+    if not Enabled then return end
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+            player.Character.HumanoidRootPart.Transparency = 0.5
         end
     end
 end
 
-ToggleOn.MouseButton1Click:Connect(function()
-    if enabled then return end
-    enabled = true
-    print("✅ Hitbox bật!")
-    while enabled do
-        setHitboxSize(hitboxSize)
-        wait(1)
+RunService.RenderStepped:Connect(updateHitbox)
+
+-- Buttons events
+BtnOn.MouseButton1Click:Connect(function()
+    local size = tonumber(TextBox.Text)
+    if size then
+        HitboxSize = size
     end
+    Enabled = true
 end)
 
-ToggleOff.MouseButton1Click:Connect(function()
-    enabled = false
-    print("❌ Hitbox tắt!")
-    setHitboxSize(normalSize)
+BtnOff.MouseButton1Click:Connect(function()
+    Enabled = false
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            player.Character.HumanoidRootPart.Size = Vector3.new(2,2,1)
+            player.Character.HumanoidRootPart.Transparency = 0
+        end
+    end
 end)
